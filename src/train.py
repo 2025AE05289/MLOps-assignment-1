@@ -395,10 +395,32 @@ def main():
     
     # ── Step 3: Setup MLflow ──
     print("\n[STEP 3] Setting up MLflow experiment tracking...")
+    os.makedirs(MLRUNS_DIR, exist_ok=True)
     mlflow_db_path = os.path.join(MLRUNS_DIR, "mlflow.db")
+
+    # Safeguard: if an existing DB references paths from a different machine, reset it
+    if os.path.exists(mlflow_db_path):
+        try:
+            temp_client = mlflow.tracking.MlflowClient(f"sqlite:///{mlflow_db_path}")
+            exp = temp_client.get_experiment_by_name("heart_disease_classification")
+            if exp and not exp.artifact_location.startswith(PROJECT_ROOT) and not os.path.exists(exp.artifact_location):
+                print(f"[WARN] Stale artifact location detected ({exp.artifact_location}). Resetting database...")
+                os.remove(mlflow_db_path)
+        except Exception:
+            pass
+
     tracking_uri = f"sqlite:///{mlflow_db_path}"
     mlflow.set_tracking_uri(tracking_uri)
-    mlflow.set_experiment("heart_disease_classification")
+
+    client = mlflow.tracking.MlflowClient()
+    exp_name = "heart_disease_classification"
+    exp = client.get_experiment_by_name(exp_name)
+    if exp is None:
+        artifacts_dir = os.path.join(MLRUNS_DIR, "artifacts")
+        os.makedirs(artifacts_dir, exist_ok=True)
+        client.create_experiment(exp_name, artifact_location=artifacts_dir)
+
+    mlflow.set_experiment(exp_name)
     print(f"[INFO] MLflow tracking URI: {tracking_uri}")
     
     # ── Step 4: Train models ──
