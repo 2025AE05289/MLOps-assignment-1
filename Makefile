@@ -12,6 +12,7 @@ help:
 	@echo "  make mlflow         - Launch MLflow UI dashboard on port 5001"
 	@echo "  make docker-build   - Build Docker container image"
 	@echo "  make docker-run     - Run Docker container on port 8000"
+	@echo "  make test-api       - Run sample prediction tests against API (scripts/test_api.sh)"
 	@echo "  make monitoring     - Start Prometheus (9090) and Grafana (3000) stack"
 	@echo "  make monitoring-down- Stop Prometheus and Grafana stack"
 	@echo "  make k8s-apply      - Deploy to Kubernetes (apply deployment and service)"
@@ -20,6 +21,9 @@ help:
 
 pipeline:
 	python main.py
+
+test-api:
+	bash scripts/test_api.sh http://localhost:8000
 
 data:
 	python data/download_data.py

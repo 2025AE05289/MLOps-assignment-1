@@ -76,13 +76,14 @@ MLOps-Assignment/
 │       ├── provisioning/            # Auto-provisioned datasources & dashboard providers
 │       └── dashboards/definitions/
 │           └── mlops_dashboard.json # Pre-built MLOps Monitoring Dashboard
+├── scripts/                         # Shell scripts for testing & cloud deployment
+│   ├── test_api.sh                  # Endpoint verification script
+│   └── deploy_azure.sh              # Quota-safe AKS automated deploy & destroy script
 ├── Dockerfile                       # Production Docker container definition
 ├── docker-compose.monitoring.yml    # Prometheus (9090) + Grafana (3000) stack
-├── deploy_azure.sh                  # Quota-safe AKS automated deploy & destroy script
 ├── Makefile                         # Single-command workflow shortcuts
 ├── main.py                          # One-line end-to-end pipeline orchestrator
 ├── app.py                           # Monitored FastAPI prediction REST API
-├── test_api.sh                      # Shell script for endpoint verification
 ├── requirements.txt                 # Pinned project dependencies
 └── README.md                        # Project documentation
 ```
@@ -163,7 +164,7 @@ pip install -r requirements.txt
   ```bash
   docker build -t heart-disease-api:latest .
   docker run -d --name heart-api -p 8000:8000 heart-disease-api:latest
-  bash test_api.sh http://localhost:8000
+  bash scripts/test_api.sh http://localhost:8000
   ```
 
 ---
@@ -183,16 +184,16 @@ Optimized for **Azure for Students ($100 credit, 4 vCPU quota)** using 1 node of
 az login
 
 # 2. Deploy cluster and manifests automatically
-bash deploy_azure.sh deploy
+bash scripts/deploy_azure.sh deploy
 
 # 3. Check deployment & obtain Public IP
-bash deploy_azure.sh status
+bash scripts/deploy_azure.sh status
 
 # 4. Test live prediction on Azure Public IP
-bash deploy_azure.sh test <PUBLIC_IP>
+bash scripts/deploy_azure.sh test <PUBLIC_IP>
 
 # 5. IMPORTANT: Destroy cluster when done to preserve your $100 credit!
-bash deploy_azure.sh destroy
+bash scripts/deploy_azure.sh destroy
 ```
 
 #### Option B: Deploy Locally on Docker Desktop Kubernetes / Minikube
