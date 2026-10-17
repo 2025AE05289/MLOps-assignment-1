@@ -30,7 +30,7 @@ spec:
               df.to_csv("data/raw/heart_disease.csv", index=False)
               ' && \
               python src/train.py && \
-              mlflow server --backend-store-uri sqlite:///output/mlruns/mlflow.db --serve-artifacts --artifacts-destination /app/output/mlruns/artifacts --host 0.0.0.0 --port 5000
+              mlflow server --backend-store-uri sqlite:///output/mlruns/mlflow.db --serve-artifacts --artifacts-destination /app/output/mlruns/artifacts --host 0.0.0.0 --port 5000 --disable-security-middleware
           ports:
             - name: http
               containerPort: 5000
