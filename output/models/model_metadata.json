@@ -1,0 +1,23 @@
+{
+  "model_name": "Logistic Regression",
+  "model_class": "LogisticRegression",
+  "numerical_features": [
+    "age",
+    "trestbps",
+    "chol",
+    "thalach",
+    "oldpeak"
+  ],
+  "categorical_features": [
+    "sex",
+    "cp",
+    "fbs",
+    "restecg",
+    "exang",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "sklearn_version": "1.9.1",
+  "python_version": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]"
+}
