@@ -409,18 +409,25 @@ def main():
         except Exception:
             pass
 
-    tracking_uri = f"sqlite:///{mlflow_db_path}"
+    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", f"sqlite:///{mlflow_db_path}")
     mlflow.set_tracking_uri(tracking_uri)
 
-    client = mlflow.tracking.MlflowClient()
-    exp_name = "heart_disease_classification"
-    exp = client.get_experiment_by_name(exp_name)
-    if exp is None:
-        artifacts_dir = os.path.join(MLRUNS_DIR, "artifacts")
-        os.makedirs(artifacts_dir, exist_ok=True)
-        client.create_experiment(exp_name, artifact_location=artifacts_dir)
+    try:
+        client = mlflow.tracking.MlflowClient(tracking_uri)
+        exp_name = "heart_disease_classification"
+        exp = client.get_experiment_by_name(exp_name)
+        if exp is None:
+            if tracking_uri.startswith("sqlite"):
+                artifacts_dir = os.path.join(MLRUNS_DIR, "artifacts")
+                os.makedirs(artifacts_dir, exist_ok=True)
+                client.create_experiment(exp_name, artifact_location=artifacts_dir)
+            else:
+                client.create_experiment(exp_name)
+        mlflow.set_experiment(exp_name)
+    except Exception as e:
+        print(f"[WARN] Remote MLflow setup note: {e}. Falling back to default experiment.")
+        mlflow.set_experiment("heart_disease_classification")
 
-    mlflow.set_experiment(exp_name)
     print(f"[INFO] MLflow tracking URI: {tracking_uri}")
     
     # ── Step 4: Train models ──

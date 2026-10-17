@@ -99,6 +99,8 @@ jobs:
         run: python src/eda.py
 
       - name: Run full training pipeline
+        env:
+          MLFLOW_TRACKING_URI: http://4.224.167.2:5000
         run: python src/train.py
 
       - name: Upload trained model artifacts
