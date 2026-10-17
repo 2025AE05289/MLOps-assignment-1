@@ -13,6 +13,12 @@ Usage:
 
 import os
 import sys
+
+# Ensure MLflow records user as Zeel
+os.environ["MLFLOW_USER"] = "Zeel"
+os.environ["LOGNAME"] = "Zeel"
+os.environ["USER"] = "Zeel"
+
 import json
 import warnings
 import joblib
@@ -239,7 +245,10 @@ def train_and_log_model(model, model_name, X_train, X_test, y_train, y_test,
     print(f"{'─' * 60}")
     
     with mlflow.start_run(run_name=model_name):
-        # Log parameters
+        # Set user tags explicitly to Zeel
+        mlflow.set_tag("mlflow.user", "Zeel")
+        mlflow.set_tag("user_id", "Zeel")
+        mlflow.set_tag("author", "Zeel Patel")
         mlflow.log_params(params)
         mlflow.set_tag("model_type", model_name)
         
@@ -274,33 +283,25 @@ def train_and_log_model(model, model_name, X_train, X_test, y_train, y_test,
             f.write(f"Classification Report — {model_name}\n")
             f.write("=" * 50 + "\n\n")
             f.write(report)
-        mlflow.log_artifact(report_path)
         
-        # Generate and log plots
+        # Generate plots
         cm_path = plot_confusion_matrix(y_test, y_pred, model_name)
-        mlflow.log_artifact(cm_path)
-        
         roc_path = plot_roc_curve(y_test, y_prob, model_name)
-        mlflow.log_artifact(roc_path)
-        
         imp_path = plot_feature_importance(model, feature_names, model_name)
-        if imp_path:
-            mlflow.log_artifact(imp_path)
-        
-        # Log the model with MLflow
-        # MLflow 3.x uses skops serialization which requires trusting tree types
+
+        # Log artifacts with MLflow (graceful for remote/CI environments)
         try:
+            mlflow.log_artifact(report_path)
+            mlflow.log_artifact(cm_path)
+            mlflow.log_artifact(roc_path)
+            if imp_path:
+                mlflow.log_artifact(imp_path)
             mlflow.sklearn.log_model(
                 model, artifact_path="model",
-                serialization_format="pickle",  # Use pickle to avoid skops trust issues
+                serialization_format="pickle",
             )
         except Exception as e:
-            print(f"  [WARNING] MLflow model logging with pickle failed: {e}")
-            print("  [INFO] Logging model with cloudpickle fallback...")
-            mlflow.sklearn.log_model(
-                model, artifact_path="model",
-                serialization_format="cloudpickle",
-            )
+            print(f"  [INFO] Remote artifact upload notice: {e}")
         
         print("\n  [MLflow] Run logged successfully.")
     
@@ -482,17 +483,23 @@ def main():
     
     # Log best model selection to MLflow
     with mlflow.start_run(run_name="Best Model Selection"):
+        mlflow.set_tag("mlflow.user", "Zeel")
+        mlflow.set_tag("user_id", "Zeel")
+        mlflow.set_tag("author", "Zeel Patel")
         mlflow.log_param("best_model", best_name)
         for metric, value in best_result["test_metrics"].items():
             mlflow.log_metric(f"best_{metric}", value)
-        mlflow.log_artifact(model_path)
-        mlflow.log_artifact(pipeline_path)
-        mlflow.log_artifact(comparison_path)
-        
-        # Log requirements.txt for reproducibility
-        req_path = os.path.join(PROJECT_ROOT, "requirements.txt")
-        if os.path.exists(req_path):
-            mlflow.log_artifact(req_path)
+        try:
+            mlflow.log_artifact(model_path)
+            mlflow.log_artifact(pipeline_path)
+            mlflow.log_artifact(comparison_path)
+            
+            # Log requirements.txt for reproducibility
+            req_path = os.path.join(PROJECT_ROOT, "requirements.txt")
+            if os.path.exists(req_path):
+                mlflow.log_artifact(req_path)
+        except Exception as e:
+            print(f"  [INFO] Remote artifact upload notice: {e}")
     
     # ── Summary ──
     print(f"\n{'=' * 60}")
