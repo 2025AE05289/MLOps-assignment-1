@@ -239,7 +239,11 @@ The application includes production-grade observability:
 
    - **Local Prometheus UI**: **[http://localhost:9090](http://localhost:9090)**
    - **Local Grafana Dashboard**: **[http://localhost:3000](http://localhost:3000)** (Username: `admin`, Password: `admin`)
-   - **Cloud Azure AKS Grafana**: **[http://20.207.96.167:3000](http://20.207.96.167:3000)** (Username: `admin`, Password: `admin`)
+   - **Local MLflow UI**: **[http://localhost:5001](http://localhost:5001)**
+   - **Cloud Azure AKS Endpoints**:
+     - **FastAPI & Swagger Docs**: **[http://4.224.167.2](http://4.224.167.2)** (Docs: `http://4.224.167.2/docs`)
+     - **Grafana Dashboard**: **[http://4.224.167.2:3000](http://4.224.167.2:3000)** (Credentials: `admin`/`admin`)
+     - **MLflow Tracking UI**: **[http://4.224.167.2:5000](http://4.224.167.2:5000)**
 
    The **Heart Disease MLOps Monitoring Dashboard** is pre-configured with:
    - **Total Predictions Served** (Counter)

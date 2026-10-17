@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: acrheart0a9382.azurecr.io/heart-disease-api:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              export GIT_PYTHON_REFRESH=quiet
+              python -c '
+              import os, pandas as pd
+              from ucimlrepo import fetch_ucirepo
+              os.makedirs("data/raw", exist_ok=True)
+              heart = fetch_ucirepo(id=45)
+              df = pd.concat([heart.data.features, heart.data.targets], axis=1)
+              df.to_csv("data/raw/heart_disease.csv", index=False)
+              ' && \
+              python src/train.py && \
+              mlflow server --backend-store-uri sqlite:///output/mlruns/mlflow.db --host 0.0.0.0 --port 5000
+          ports:
+            - name: http
+              containerPort: 5000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "3Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+  labels:
+    app: mlflow
+spec:
+  type: ClusterIP
+  selector:
+    app: mlflow
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

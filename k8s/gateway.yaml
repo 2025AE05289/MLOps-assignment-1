@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-nginx-conf
+  labels:
+    app: mlops-gateway
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        client_max_body_size 50M;
+
+        # 1. FastAPI Prediction Engine & Docs
+        server {
+            listen 80;
+            location / {
+                proxy_pass http://heart-disease-api-service:80;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+
+        # 2. Grafana Observability Dashboard
+        server {
+            listen 3000;
+            location / {
+                proxy_pass http://grafana-service:3000;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+
+        # 3. MLflow Experiment Tracking Server
+        server {
+            listen 5000;
+            location / {
+                proxy_pass http://mlflow-service:5000;
+                proxy_set_header Host localhost;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlops-gateway
+  labels:
+    app: mlops-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlops-gateway
+  template:
+    metadata:
+      labels:
+        app: mlops-gateway
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - name: http
+              containerPort: 80
+            - name: grafana
+              containerPort: 3000
+            - name: mlflow
+              containerPort: 5000
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: config-volume
+          configMap:
+            name: gateway-nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlops-gateway-service
+  labels:
+    app: mlops-gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: mlops-gateway
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+    - name: mlflow
+      port: 5000
+      targetPort: 5000

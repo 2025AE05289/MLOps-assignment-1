@@ -312,7 +312,7 @@ metadata:
   labels:
     app: grafana
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: grafana
   ports:
