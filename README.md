@@ -237,8 +237,9 @@ The application includes production-grade observability:
    # OR: docker compose -f monitoring/docker-compose.yml up -d
    ```
 
-   - **Prometheus UI**: **[http://localhost:9090](http://localhost:9090)**
-   - **Grafana Dashboard**: **[http://localhost:3000](http://localhost:3000)** (Username: `admin`, Password: `admin`)
+   - **Local Prometheus UI**: **[http://localhost:9090](http://localhost:9090)**
+   - **Local Grafana Dashboard**: **[http://localhost:3000](http://localhost:3000)** (Username: `admin`, Password: `admin`)
+   - **Cloud Azure AKS Grafana**: **[http://20.207.96.167:3000](http://20.207.96.167:3000)** (Username: `admin`, Password: `admin`)
 
    The **Heart Disease MLOps Monitoring Dashboard** is pre-configured with:
    - **Total Predictions Served** (Counter)
