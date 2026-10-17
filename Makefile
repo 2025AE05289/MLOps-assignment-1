@@ -53,10 +53,10 @@ docker-run:
 	docker run -d --name heart-api -p 8000:8000 heart-disease-api:latest
 
 monitoring:
-	docker compose -f docker-compose.monitoring.yml up -d
+	docker compose -f monitoring/docker-compose.yml up -d
 
 monitoring-down:
-	docker compose -f docker-compose.monitoring.yml down
+	docker compose -f monitoring/docker-compose.yml down
 
 k8s-apply:
 	kubectl apply -f k8s/

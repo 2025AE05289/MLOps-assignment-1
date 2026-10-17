@@ -69,7 +69,8 @@ MLOps-Assignment/
 │   ├── deployment.yaml              # Kubernetes Deployment (2 replicas, health probes, limits)
 │   ├── service.yaml                 # Kubernetes LoadBalancer Service (Public IP)
 │   └── hpa.yaml                     # HorizontalPodAutoscaler (CPU autoscale 2-5 pods)
-├── monitoring/
+├── monitoring/                      # [Task 8] Observability & Performance Dashboards
+│   ├── docker-compose.yml           # Prometheus (9090) + Grafana (3000) stack
 │   ├── prometheus/
 │   │   └── prometheus.yml           # Prometheus scrape config (/metrics)
 │   └── grafana/
@@ -80,7 +81,6 @@ MLOps-Assignment/
 │   ├── test_api.sh                  # Endpoint verification script
 │   └── deploy_azure.sh              # Quota-safe AKS automated deploy & destroy script
 ├── Dockerfile                       # Production Docker container definition
-├── docker-compose.monitoring.yml    # Prometheus (9090) + Grafana (3000) stack
 ├── Makefile                         # Single-command workflow shortcuts
 ├── main.py                          # One-line end-to-end pipeline orchestrator
 ├── app.py                           # Monitored FastAPI prediction REST API
@@ -234,7 +234,7 @@ The application includes production-grade observability:
    Start Prometheus and Grafana with one command:
    ```bash
    make monitoring
-   # OR: docker compose -f docker-compose.monitoring.yml up -d
+   # OR: docker compose -f monitoring/docker-compose.yml up -d
    ```
 
    - **Prometheus UI**: **[http://localhost:9090](http://localhost:9090)**
