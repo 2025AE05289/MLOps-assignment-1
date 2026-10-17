@@ -1,20 +1,29 @@
 """
-Heart Disease Prediction API — FastAPI Application.
+Heart Disease Prediction API — FastAPI Application with Monitoring & Logging.
 
 Serves the trained ML model via a REST API with endpoints:
 - GET  /          → API info and welcome message
 - GET  /health    → Health check
+- GET  /metrics   → Prometheus metrics endpoint
 - POST /predict   → Predict heart disease risk from patient features
 """
 
 import os
 import json
+import time
+import logging
 import joblib
 import numpy as np
 import pandas as pd
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from pydantic import BaseModel, Field, ConfigDict
+from prometheus_client import (
+    Counter,
+    Histogram,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
 
 # ── Paths ──────────────────────────────────────────────────────────────
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +31,50 @@ MODELS_DIR = os.path.join(PROJECT_ROOT, "output", "models")
 MODEL_PATH = os.path.join(MODELS_DIR, "final_model.joblib")
 PIPELINE_PATH = os.path.join(MODELS_DIR, "preprocessing_pipeline.joblib")
 METADATA_PATH = os.path.join(MODELS_DIR, "model_metadata.json")
+LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOGS_DIR, "api.log")
+
+# ── Logging Setup (stdout + file) ──────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(LOG_FILE),
+    ],
+)
+logger = logging.getLogger("heart_disease_api")
+
+# ── Prometheus Metrics Setup ───────────────────────────────────────────
+REQUEST_COUNT = Counter(
+    "http_requests_total",
+    "Total HTTP requests received",
+    ["method", "endpoint", "status_code"],
+)
+REQUEST_LATENCY = Histogram(
+    "http_request_duration_seconds",
+    "HTTP request latency in seconds",
+    ["method", "endpoint"],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+)
+PREDICTIONS_COUNT = Counter(
+    "model_predictions_total",
+    "Total ML model predictions grouped by outcome",
+    ["prediction_label", "model_name"],
+)
+PREDICTION_CONFIDENCE = Histogram(
+    "model_prediction_confidence",
+    "Prediction confidence score distribution",
+    ["model_name"],
+    buckets=[0.5, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 0.98, 1.0],
+)
+INFERENCE_LATENCY = Histogram(
+    "model_inference_duration_seconds",
+    "Pure ML model inference time (feature transform + prediction)",
+    ["model_name"],
+    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1],
+)
 
 # ── Load model and pipeline ───────────────────────────────────────────
 model = None
@@ -53,9 +106,9 @@ async def lifespan(app: FastAPI):
     """Load model artifacts on application startup."""
     try:
         load_artifacts()
-        print("[INFO] Model artifacts loaded successfully.")
+        logger.info("Model artifacts loaded successfully.")
     except Exception as e:
-        print(f"[ERROR] Failed to load model artifacts: {e}")
+        logger.error(f"Failed to load model artifacts: {e}")
     yield
 
 
@@ -109,8 +162,8 @@ class HealthResponse(BaseModel):
 app = FastAPI(
     title="Heart Disease Prediction API",
     description=(
-        "A machine learning API that predicts the risk of heart disease "
-        "based on patient health data. Built with FastAPI and scikit-learn."
+        "A monitored, production machine learning API that predicts heart disease "
+        "risk with Prometheus metrics export and structured request logging."
     ),
     version="1.0.0",
     docs_url="/docs",
@@ -118,6 +171,34 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# ── Logging & Metrics Middleware ───────────────────────────────────────
+@app.middleware("http")
+async def log_and_meter_requests(request: Request, call_next):
+    """Middleware to log request details and update Prometheus metrics."""
+    start_time = time.time()
+    endpoint = request.url.path
+    method = request.method
+    client_host = request.client.host if request.client else "unknown"
+
+    status_code = 500
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    except Exception as e:
+        logger.error(f"{method} {endpoint} unhandled error: {e}", exc_info=True)
+        raise e
+    finally:
+        latency = time.time() - start_time
+        REQUEST_COUNT.labels(method=method, endpoint=endpoint, status_code=status_code).inc()
+        REQUEST_LATENCY.labels(method=method, endpoint=endpoint).observe(latency)
+        logger.info(
+            f"{client_host} - '{method} {endpoint}' {status_code} - Latency: {latency * 1000:.2f}ms"
+        )
+
+
+# ── Endpoints ──────────────────────────────────────────────────────────
 
 @app.get("/", tags=["Info"])
 async def root():
@@ -128,6 +209,7 @@ async def root():
         "docs": "/docs",
         "endpoints": {
             "health": "GET /health",
+            "metrics": "GET /metrics",
             "predict": "POST /predict",
         },
     }
@@ -141,6 +223,12 @@ async def health_check():
         model_loaded=model is not None,
         model_name=metadata.get("model_name", "Unknown") if metadata else "Not loaded",
     )
+
+
+@app.get("/metrics", tags=["Monitoring"], include_in_schema=True)
+async def metrics():
+    """Prometheus metrics endpoint for scraping."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.post("/predict", response_model=PredictionOutput, tags=["Prediction"])
@@ -162,6 +250,8 @@ async def predict(patient: PatientInput):
         )
 
     try:
+        inf_start = time.time()
+
         # Convert input to DataFrame (preprocessor expects DataFrame)
         input_data = pd.DataFrame([patient.model_dump()])
 
@@ -172,8 +262,20 @@ async def predict(patient: PatientInput):
         prediction = int(model.predict(X)[0])
         probabilities = model.predict_proba(X)[0]
         confidence = float(np.max(probabilities))
+        inf_duration = time.time() - inf_start
 
         label = "Disease" if prediction == 1 else "No Disease"
+        model_name = metadata.get("model_name", "Unknown") if metadata else "Unknown"
+
+        # Record custom MLOps Prometheus metrics
+        PREDICTIONS_COUNT.labels(prediction_label=label, model_name=model_name).inc()
+        PREDICTION_CONFIDENCE.labels(model_name=model_name).observe(confidence)
+        INFERENCE_LATENCY.labels(model_name=model_name).observe(inf_duration)
+
+        logger.info(
+            f"[PREDICTION] Result: {label} (pred={prediction}) | Confidence: {confidence:.4f} | "
+            f"Inference: {inf_duration * 1000:.2f}ms | Age: {patient.age}, Sex: {patient.sex}, CP: {patient.cp}"
+        )
 
         return PredictionOutput(
             prediction=prediction,
@@ -183,10 +285,11 @@ async def predict(patient: PatientInput):
                 "no_disease": round(float(probabilities[0]), 4),
                 "disease": round(float(probabilities[1]), 4),
             },
-            model_name=metadata.get("model_name", "Unknown") if metadata else "Unknown",
+            model_name=model_name,
         )
 
     except Exception as e:
+        logger.error(f"Prediction failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Prediction failed: {str(e)}",

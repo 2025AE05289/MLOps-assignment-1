@@ -20,6 +20,10 @@ mlruns/
 htmlcov/
 output/coverage_report/
 
+# API logs
+logs/
+*.log
+
 # OS generated files
 .DS_Store
 .DS_Store?
