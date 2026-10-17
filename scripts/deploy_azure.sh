@@ -17,9 +17,9 @@
 set -e
 
 RESOURCE_GROUP="${AZURE_RG:-rg-mlops-heart}"
-LOCATION="${AZURE_LOCATION:-eastus}"
+LOCATION="${AZURE_LOCATION:-centralindia}"
 CLUSTER_NAME="${AZURE_CLUSTER:-aks-heart-mlops}"
-VM_SIZE="Standard_B2s"   # 2 vCPUs - strictly safe for student account quota
+VM_SIZE="Standard_B2s_v2"   # 2 vCPUs - strictly safe for student account quota in centralindia
 NODE_COUNT=1
 
 ACTION="${1:-help}"
@@ -36,30 +36,56 @@ case "$ACTION" in
     echo "============================================================"
 
     # 1. Create Resource Group
-    echo -e "\n[1/5] Creating Azure Resource Group..."
+    echo -e "\n[1/6] Creating Azure Resource Group..."
     az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 
-    # 2. Create AKS Cluster (1 node Standard_B2s)
-    echo -e "\n[2/5] Provisioning AKS Cluster (takes ~3-4 minutes)..."
+    # 2. Find or Create Azure Container Registry (ACR)
+    EXISTING_ACR=$(az acr list --resource-group "$RESOURCE_GROUP" --query "[0].name" -o tsv 2>/dev/null || true)
+    if [ -n "$EXISTING_ACR" ] && [ "$EXISTING_ACR" != "None" ]; then
+      ACR_NAME="$EXISTING_ACR"
+      echo -e "\n[2/6] Using existing Azure Container Registry ($ACR_NAME)..."
+    else
+      RAND_SUFFIX=$(openssl rand -hex 3 2>/dev/null || echo "101")
+      ACR_NAME="${AZURE_ACR:-acrheart$RAND_SUFFIX}"
+      echo -e "\n[2/6] Provisioning Azure Container Registry ($ACR_NAME)..."
+      az acr create --resource-group "$RESOURCE_GROUP" --name "$ACR_NAME" --sku Basic --admin-enabled true
+    fi
+    ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer --output tsv)
+
+    # 3. Build & push container image for linux/amd64 natively compatible with AKS VMs
+    IMAGE_EXISTS=$(az acr repository show-tags --name "$ACR_NAME" --repository heart-disease-api --query "[?@=='latest']" -o tsv 2>/dev/null || true)
+    if [ -n "$IMAGE_EXISTS" ]; then
+      echo -e "\n[3/6] Container image already exists in ACR ($ACR_LOGIN_SERVER/heart-disease-api:latest). Skipping build!"
+    else
+      echo -e "\n[3/6] Authenticating and pushing linux/amd64 container image to ACR ($ACR_LOGIN_SERVER)..."
+      az acr login --name "$ACR_NAME"
+      docker buildx build --platform linux/amd64 -t "$ACR_LOGIN_SERVER/heart-disease-api:latest" --push .
+    fi
+
+    # 4. Create AKS Cluster (1 node Standard_B2s, attached to ACR)
+    echo -e "\n[4/6] Provisioning AKS Cluster (takes ~3-4 minutes)..."
     az aks create \
       --resource-group "$RESOURCE_GROUP" \
       --name "$CLUSTER_NAME" \
       --node-count "$NODE_COUNT" \
       --node-vm-size "$VM_SIZE" \
       --generate-ssh-keys \
-      --enable-managed-identity
+      --attach-acr "$ACR_NAME"
 
-    # 3. Get Credentials for kubectl
-    echo -e "\n[3/5] Connecting kubectl to AKS..."
+    # 5. Get Credentials for kubectl
+    echo -e "\n[5/6] Connecting kubectl to AKS..."
     az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$CLUSTER_NAME" --overwrite-existing
 
-    # 4. Deploy Kubernetes Manifests
-    echo -e "\n[4/5] Deploying API pods and LoadBalancer service..."
-    kubectl apply -f k8s/deployment.yaml
+    # 6. Deploy Kubernetes Manifests
+    echo -e "\n[6/6] Deploying API pods and LoadBalancer service..."
     kubectl apply -f k8s/service.yaml
+    kubectl apply -f k8s/hpa.yaml 2>/dev/null || true
+    
+    # Deploy with ACR image
+    sed "s|image: heart-disease-api:latest|image: $ACR_LOGIN_SERVER/heart-disease-api:latest|g; s|imagePullPolicy: IfNotPresent|imagePullPolicy: Always|g" k8s/deployment.yaml | kubectl apply -f -
 
-    # 5. Wait for LoadBalancer Public IP
-    echo -e "\n[5/5] Waiting for Public IP allocation from Azure LoadBalancer..."
+    # 7. Wait for LoadBalancer Public IP
+    echo -e "\n[7/7] Waiting for Public IP allocation from Azure LoadBalancer..."
     echo "Checking service status (may take 60-90 seconds)..."
     for i in {1..20}; do
       EXTERNAL_IP=$(kubectl get svc heart-disease-api-service -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
