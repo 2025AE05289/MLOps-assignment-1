@@ -17,7 +17,7 @@ This report documents the design, development, containerization, cloud deploymen
 - **Automated Experiment Tracking**: Tracked with **MLflow**; logs hyperparameters, cross-validation metrics, confusion matrices, ROC curves, and serialized artifacts.
 - **Continuous Integration (CI/CD)**: A 3-stage **GitHub Actions** pipeline enforcing PEP8 code formatting (`flake8`), running **55 unit tests with code coverage** (`pytest-cov`), and executing automated model training on every commit.
 - **Production Cloud Deployment**: Containerized with **FastAPI** and deployed to **Azure Kubernetes Service (AKS)** in the `centralindia` region with Horizontal Pod Autoscaling (2–5 replicas) and resource limits.
-- **Unified Cloud Gateway**: FastAPI (`:80`), Grafana (`:3000`), and MLflow (`:5000`) unified under a single Azure LoadBalancer public IP (`4.224.167.2`), strictly respecting Azure Student Account quotas ($100 credit, 4 vCPU limit).
+- **Unified Cloud Gateway**: FastAPI (`:80`), Grafana (`:3000`), and MLflow (`:5000`) unified under a single Azure LoadBalancer public IP (`4.224.167.2`).
 - **Full-Stack Observability**: Structured request logging to persistent logs (`logs/api.log`), real-time Prometheus metrics scraping (`/metrics`), and a pre-configured Grafana performance dashboard.
 
 ---
@@ -26,43 +26,7 @@ This report documents the design, development, containerization, cloud deploymen
 
 The system follows modern cloud-native MLOps architecture patterns, separating offline experimentation, continuous integration, container delivery, and online serving.
 
-```mermaid
-flowchart TD
-    subgraph Data_Prep ["1. Data Acquisition & Feature Pipeline"]
-        Raw["UCI Heart Disease Dataset<br>(UCIMLRepo ID: 45)"] --> Clean["Data Preprocessing<br>• Missing value imputation<br>• Target binarization (0 vs 1)"]
-        Clean --> FE["Feature Engineering<br>• StandardScaler (Numerical)<br>• OneHotEncoder (Categorical)<br>• ColumnTransformer"]
-    end
-
-    subgraph Training_Tracking ["2. Modeling & Experiment Tracking"]
-        FE --> Split["Stratified 80/20 Train-Test Split"]
-        Split --> Train["5-Fold Stratified Cross-Validation<br>1. Logistic Regression (L2, L-BFGS)<br>2. Random Forest (100 Trees)"]
-        Train --> MLflow["MLflow Tracking Server<br>• Params, Metrics, ROC, CM<br>• Artifact Registry"]
-        Train --> Select["Champion Model Selection<br>(ROC-AUC: 0.9621)"]
-        Select --> Artifacts["Serialized Packages<br>• final_model.joblib<br>• preprocessor.joblib<br>• model_metadata.json"]
-    end
-
-    subgraph CI_CD ["3. CI/CD Automation (GitHub Actions)"]
-        Commit["Git Push to main"] --> LintJob["Job 1: Lint (flake8)"]
-        LintJob --> TestJob["Job 2: Test (55 Pytest Unit Tests)"]
-        TestJob --> TrainJob["Job 3: Train & Package"]
-        TrainJob --> SyncCloud["Sync Runs to Cloud MLflow"]
-    end
-
-    subgraph Cloud_Deployment ["4. Azure Kubernetes Service (AKS)"]
-        Artifacts --> Docker["Docker Image (Linux/amd64)<br>heart-disease-api:latest"]
-        Docker --> ACR["Azure Container Registry (ACR)<br>acrheart0a9382.azurecr.io"]
-        ACR --> AKS["AKS Cluster (Central India)<br>1 Node: Standard_B2s_v2 (8GB RAM)"]
-        
-        AKS --> Gateway["Unified NGINX Gateway<br>Public IP: 4.224.167.2"]
-        Gateway -->|Port 80| API["FastAPI Replicas (HPA 2-5)<br>• GET /docs, /health<br>• POST /predict"]
-        Gateway -->|Port 3000| Grafana["Grafana Server (3000)<br>• Auto-provisioned Dashboards"]
-        Gateway -->|Port 5000| MLflowServer["MLflow UI Server (5000)"]
-        
-        API -->|Scrapes /metrics every 5s| Prom["Prometheus (9090)"]
-        Prom --> Grafana
-        API -->|JSON Request Logs| Logs["logs/api.log"]
-    end
-```
+![architecture diagram](docs/screenshots/architecture-diagram.png)
 
 ---
 
@@ -104,8 +68,8 @@ The pipeline uses the **UCI Heart Disease Dataset** (Cleveland database, UCIMLRe
 | `num` | Target diagnosis of heart disease | Target | 0 (No Disease) to 4 (Severe Disease) |
 
 ### 3.2 Preprocessing & Data Cleaning
-Implemented in [`src/data_preprocessing.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/src/data_preprocessing.py):
-1. **Automated Acquisition**: Script [`data/download_data.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/data/download_data.py) fetches directly from the UCI repository using `ucimlrepo` and caches the raw CSV to `data/raw/heart_disease.csv`.
+Implemented in [`src/data_preprocessing.py`](src/data_preprocessing.py):
+1. **Automated Acquisition**: Script [`data/download_data.py`](data/download_data.py) fetches directly from the UCI repository using `ucimlrepo` and caches the raw CSV to `data/raw/heart_disease.csv`.
 2. **Missing Value Imputation**:
    - `ca` contained 4 missing values (1.3%).
    - `thal` contained 2 missing values (0.7%).
@@ -117,7 +81,7 @@ Implemented in [`src/data_preprocessing.py`](file:///Users/nisarg/Desktop/MLOps-
    - **Class Balance**: The dataset is balanced (54.1% vs 45.9%), eliminating the need for synthetic oversampling (e.g., SMOTE) while motivating the use of stratified sampling for train-test splitting and cross-validation.
 
 ### 3.3 EDA Visualizations & Clinical Insights
-Implemented in [`src/eda.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/src/eda.py). Six publication-quality visualizations were saved to `output/figures/`:
+Implemented in [`src/eda.py`](src/eda.py). Six publication-quality visualizations were saved to `output/figures/`:
 
 1. **Target Distribution (`01_target_distribution.png`)**: Confirms near-equal class balance (164 vs 139).
 2. **Numerical Feature Histograms (`02_numerical_histograms.png`)**: Shows approximately Gaussian distributions for `age`, `trestbps`, and `chol`, with right-skewed `oldpeak` and left-skewed `thalach`.
@@ -131,13 +95,13 @@ Implemented in [`src/eda.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/src/
 ## 4. Task 2: Feature Engineering & Model Development
 
 ### 4.1 Feature Engineering Architecture
-Implemented in [`src/feature_engineering.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/src/feature_engineering.py):
+Implemented in [`src/feature_engineering.py`](src/feature_engineering.py):
 - **Numerical Pipeline**: Applied `StandardScaler()` to all 5 continuous variables (`age`, `trestbps`, `chol`, `thalach`, `oldpeak`) to zero-center and scale variance to 1. This prevents variables with large ranges (e.g., cholesterol in mg/dl) from dominating distance/gradient calculations.
 - **Categorical Pipeline**: Applied `OneHotEncoder(handle_unknown='ignore', drop=None)` to all 8 discrete features (`sex`, `cp`, `fbs`, `restecg`, `exang`, `slope`, `ca`, `thal`), generating 20 encoded binary columns.
 - **Pipeline Integration**: Assembled into a single Scikit-Learn `ColumnTransformer`. The transformer is fitted strictly on the training partition ($X_{train}$) and transforms both $X_{train}$ and $X_{test}$, preventing train-test data leakage.
 
 ### 4.2 Model Exploration & Selection
-Two complementary classification families were selected and trained in [`src/train.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/src/train.py):
+Two complementary classification families were selected and trained in [`src/train.py`](src/train.py):
 1. **Logistic Regression (Linear Benchmark)**:
    - Hyperparameters: `C=1.0`, `solver='lbfgs'`, `penalty='l2'`, `max_iter=1000`, `random_state=42`.
    - Rationale: High interpretability, naturally calibrated prediction probabilities, and convex optimization with minimal risk of overfitting on small clinical datasets ($N=303$).
@@ -178,16 +142,12 @@ All modeling iterations, parameters, evaluation metrics, and diagnostic figures 
   - `model_comparison.png` (Side-by-side metric bar charts).
   - `report_*.txt` (Full Scikit-Learn classification reports).
   - Serialized model binaries (`model/` MLflow format).
-- **Run Metadata**: Explicitly tagged with author `Zeel Patel`, user `Zeel`, and model type.
 
 ### 5.2 MLflow Experiment Tracking UI & Runs Screenshot
 
-![MLflow Tracking Server and Runs](docs/screenshots/04_mlflow_tracking_runs.png)
+![MLflow Tracking Server](docs/screenshots/mlflow_tracking.png)
+![MLflow Tracking Server and Runs](docs/screenshots/mlflow_tracking_runs.png)
 
-> **[Screenshot Placeholder: `04_mlflow_tracking_runs.png`]**  
-> - **Description**: MLflow UI showing the `heart_disease_classification` experiment, comparative runs for `logistic_regression` and `random_forest`, logged metrics (`cv_roc_auc_mean`, `test_roc_auc`), and author attribution `Zeel`.  
-> - **Source URL**: `http://4.224.167.2:5000/#/experiments/1`  
-> - **Where to save**: `docs/screenshots/04_mlflow_tracking_runs.png`
 
 ---
 
@@ -208,12 +168,12 @@ To guarantee reproducibility across development, CI runners, and Kubernetes pods
 
 ### 7.1 Unit Testing Framework
 Implemented in `tests/` using **Pytest** and **Pytest-Cov** across **55 unit tests** (100% pass rate):
-- [`test_data_preprocessing.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/tests/test_data_preprocessing.py) (22 tests): Verifies missing value imputation, mode replacement, column preservation, categorical typing, and binary target mapping.
-- [`test_feature_engineering.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/tests/test_feature_engineering.py) (17 tests): Verifies `ColumnTransformer` output shapes, scaling boundaries, one-hot encoding dimensions, and zero data leakage.
-- [`test_train.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/tests/test_train.py) (16 tests): Validates stratified 5-fold cross-validation splits, ROC-AUC computation, model persistence, and metadata generation.
+- [`test_data_preprocessing.py`](tests/test_data_preprocessing.py) (22 tests): Verifies missing value imputation, mode replacement, column preservation, categorical typing, and binary target mapping.
+- [`test_feature_engineering.py`](tests/test_feature_engineering.py) (17 tests): Verifies `ColumnTransformer` output shapes, scaling boundaries, one-hot encoding dimensions, and zero data leakage.
+- [`test_train.py`](tests/test_train.py) (16 tests): Validates stratified 5-fold cross-validation splits, ROC-AUC computation, model persistence, and metadata generation.
 
 ### 7.2 GitHub Actions CI Pipeline
-Automated via [`.github/workflows/ci.yml`](file:///Users/nisarg/Desktop/MLOps-Assignment/.github/workflows/ci.yml) with 3 strictly separated jobs running on Ubuntu runners:
+Automated via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) with 3 strictly separated jobs running on Ubuntu runners:
 
 ```
 [git push] ──> Job 1: Lint (flake8) ──> Job 2: Test (pytest 55 tests) ──> Job 3: Train & Cloud Sync
@@ -226,19 +186,17 @@ Automated via [`.github/workflows/ci.yml`](file:///Users/nisarg/Desktop/MLOps-As
 
 ### 7.3 CI/CD Workflow Execution Screenshot
 
-![GitHub Actions CI Workflow](docs/screenshots/01_github_actions_ci.png)
+![GitHub Actions CI Workflow](docs/screenshots/github_actions_ci.png)
 
-> **[Screenshot Placeholder: `01_github_actions_ci.png`]**  
-> - **Description**: GitHub Actions workflow run overview showing all 3 jobs (`lint`, `test` with 55 passing unit tests, `train`) completing with green checkmarks on push to `main` by `Mr-ZeelPatel`.  
-> - **Source URL**: `https://github.com/Mr-ZeelPatel/MLOps-assignment-1/actions`  
-> - **Where to save**: `docs/screenshots/01_github_actions_ci.png`
+GitHub Actions workflow run overview showing all 3 jobs (`lint`, `test` with 55 passing unit tests, `train`) completing with green checkmarks on push to `main`
 
+![GitHub Actions CI Workflow](docs/screenshots/github_actions_ci_pipeline.png)
 ---
 
 ## 8. Task 6: Model Containerization
 
 ### 8.1 REST API Architecture
-Built with **FastAPI** in [`app.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/app.py):
+Built with **FastAPI** in [`app.py`](app.py):
 - **Input Validation**: Strict typing via `Pydantic` schema (`HeartDiseaseInput`) validating ranges for all 13 clinical features.
 - **Inference (`POST /predict`)**: Computes predicted class (`0` = Healthy, `1` = Heart Disease), human-readable label, calibrated confidence score, and probability distribution.
 - **Health Probes (`GET /health`)**: Returns model status and memory health for Kubernetes liveness/readiness probes.
@@ -259,12 +217,11 @@ The test suite validates 5 distinct clinical scenarios against the running API:
 
 ### 8.4 Live API Swagger Interface Screenshot
 
-![FastAPI Interactive Swagger UI](docs/screenshots/02_fastapi_swagger_docs.png)
+Interactive OpenAPI Swagger documentation page showing available routes (`/predict`, `/health`, `/metrics`) and input payload schemas.
 
-> **[Screenshot Placeholder: `02_fastapi_swagger_docs.png`]**  
-> - **Description**: Interactive OpenAPI Swagger documentation page showing available routes (`/predict`, `/health`, `/metrics`) and input payload schemas.  
 > - **Source URL**: `http://4.224.167.2/docs`  
-> - **Where to save**: `docs/screenshots/02_fastapi_swagger_docs.png`
+
+![FastAPI Interactive Swagger UI](docs/screenshots/fastapi_swagger_docs.png)
 
 ---
 
@@ -277,8 +234,17 @@ Deployed to **Azure Kubernetes Service (AKS)** in region `centralindia`:
 - **Container Registry**: Azure Container Registry `acrheart0a9382.azurecr.io` (Basic SKU).
 - **Quota Compliance**: Azure for Students subscriptions enforce a strict quota limit of **3 Public IP addresses per region**. We designed a unified NGINX Gateway LoadBalancer that multiplexes all three services through **1 single Public IP** (`4.224.167.2`), fully compliant with student quotas.
 
+Resources created on Azure to host the application
+![azure resources](docs/screenshots/azure_resources.png)
+
+IP address of the application
+![azure ip address](docs/screenshots/azure_ip_address.png)
+
+Load balancer
+![azure load balancer](docs/screenshots/azure_load_balancer.png)
+
 ### 9.2 Kubernetes Manifests
-Stored under [`k8s/`](file:///Users/nisarg/Desktop/MLOps-Assignment/k8s/):
+Stored under [`k8s/`](k8s/):
 - **`k8s/deployment.yaml`**: Deploys 2 pod replicas of `heart-disease-api` with resource requests (`cpu: 100m`, `memory: 256Mi`), limits (`cpu: 500m`, `memory: 512Mi`), and HTTP health probes.
 - **`k8s/hpa.yaml`**: Configures Horizontal Pod Autoscaling to automatically scale between 2 and 5 pods when CPU utilization exceeds 70%.
 - **`k8s/gateway.yaml`**: Deploys an NGINX reverse-proxy LoadBalancer routing:
@@ -308,19 +274,14 @@ horizontalpodautoscaler/api-hpa      Deployment/heart-disease-api   cpu: 7%/70% 
 
 ### 9.4 Azure AKS Deployment & Cluster Status Screenshot
 
-![Kubernetes Cluster Status](docs/screenshots/03_kubernetes_cluster_status.png)
-
-> **[Screenshot Placeholder: `03_kubernetes_cluster_status.png`]**  
-> - **Description**: Terminal output showing all 6 Kubernetes pods running, LoadBalancer public IP `4.224.167.2`, and active HPA configuration.  
-> - **Command to run**: `kubectl get pods,svc,hpa -o wide`  
-> - **Where to save**: `docs/screenshots/03_kubernetes_cluster_status.png`
+![Kubernetes Cluster Status](docs/screenshots/azure_k8s_cluster.png)
 
 ---
 
 ## 10. Task 8: Monitoring & Logging
 
 ### 10.1 Structured Request Logging
-Implemented via custom middleware in [`app.py`](file:///Users/nisarg/Desktop/MLOps-Assignment/app.py). Every HTTP transaction is serialized to standard output and written to [`logs/api.log`](file:///Users/nisarg/Desktop/MLOps-Assignment/logs/api.log):
+Implemented via custom middleware in [`app.py`](app.py). Every HTTP transaction is serialized to standard output and written to [`logs/api.log`](logs/api.log):
 ```json
 {
   "timestamp": "2026-10-17T08:35:10.112Z",
@@ -344,7 +305,7 @@ Exposes operational and ML business metrics:
 - `model_inference_duration_seconds`: Pure Scikit-Learn inference time.
 
 ### 10.3 Grafana Dashboard (`http://4.224.167.2:3000`)
-Auto-provisioned via [`k8s/monitoring-grafana.yaml`](file:///Users/nisarg/Desktop/MLOps-Assignment/k8s/monitoring-grafana.yaml) with 6 visual panels:
+Auto-provisioned via [`k8s/monitoring-grafana.yaml`](k8s/monitoring-grafana.yaml) with 6 visual panels:
 1. **Total Predictions Served** (Counter panel).
 2. **Average Model Confidence** (Radial Gauge).
 3. **Prediction Breakdown by Class** (Donut chart: *Disease* vs *No Disease*).
@@ -354,29 +315,14 @@ Auto-provisioned via [`k8s/monitoring-grafana.yaml`](file:///Users/nisarg/Deskto
 
 ### 10.4 Grafana Observability Dashboard Screenshot
 
-![Grafana Production Monitoring Dashboard](docs/screenshots/05_grafana_monitoring_dashboard.png)
+Live Grafana MLOps dashboard showing real-time metrics: Total Predictions Served, Average Model Confidence, Prediction Breakdown (Disease vs Healthy), API Request Rate, Latency P95, and HTTP Status Codes. 
 
-> **[Screenshot Placeholder: `05_grafana_monitoring_dashboard.png`]**  
-> - **Description**: Live Grafana MLOps dashboard showing real-time metrics: Total Predictions Served, Average Model Confidence, Prediction Breakdown (Disease vs Healthy), API Request Rate, Latency P95, and HTTP Status Codes.  
-> - **Source URL**: `http://4.224.167.2:3000/d/heart-disease-mlops`  
-> - **Where to save**: `docs/screenshots/05_grafana_monitoring_dashboard.png`
+**Source URL**: `http://4.224.167.2:3000/d/mlops-heart-disease-monitor`  
 
----
-
-## 11. Cost Analysis & Resource Management
-
-Operating costs for the full stack on Azure (72 continuous hours):
-
-| Resource | Unit Rate | 3-Day Cost (72 hrs) | Notes |
-| :--- | :--- | :--- | :--- |
-| **AKS Worker Node (`Standard_B2s_v2`)** | $0.0416 / hr | **$3.00** | 2 vCPUs, 8 GB RAM (Hosts all 6 pods) |
-| **Azure Container Registry (Basic)** | $0.167 / day | **$0.50** | Container image storage |
-| **Public LoadBalancer IPs** | $0.004 / hr | **$0.58** | 1 Gateway IP + 1 AKS Outbound IP |
-| **Node Managed OS Disk (128GB)** | $0.077 / day | **$0.23** | Standard SSD disk |
-| **AKS Cluster Management** | Free Tier | **$0.00** | No management surcharge |
-| **TOTAL FOR 3 FULL DAYS** | | **~$4.31 USD** *(~₹360 INR)* | **Leaves $95.69 of $100 student credits** |
+![Grafana Production Monitoring Dashboard](docs/screenshots/grafana_monitoring_dashboard.png)
 
 ---
+
 
 ## 12. Reproduction & Verification Guide
 
@@ -409,26 +355,8 @@ bash scripts/test_api.sh http://4.224.167.2
 kubectl get pods,svc,hpa -o wide
 ```
 
-### 12.3 Teardown Command (To Stop Azure Billing)
-```bash
-az group delete --name rg-mlops-heart --yes --no-wait
-```
-
 ---
 
-## 13. Required Screenshots & Evidence Submission Catalog
-
-To satisfy all requirements of **Task 9 (Documentation & Reporting)**, the following five screenshots provide visual proof of the operational pipeline across CI/CD, serving, tracking, orchestration, and monitoring. Save your captured images directly into `docs/screenshots/` using the specified filenames:
-
-| # | Filename | Assignment Task | What to Capture | Source URL / Terminal Command |
-| :---: | :--- | :--- | :--- | :--- |
-| **1** | `01_github_actions_ci.png` | **Task 5**: CI/CD Automation | GitHub Actions run overview with all 3 jobs green: `lint` (flake8), `test` (55 tests passing), and `train`. | `https://github.com/Mr-ZeelPatel/MLOps-assignment-1/actions` |
-| **2** | `02_fastapi_swagger_docs.png` | **Task 6 & 7**: API Serving | Interactive OpenAPI Swagger UI showing `/predict`, `/health`, `/metrics` routes and the `PatientInput` schema. | `http://4.224.167.2/docs` |
-| **3** | `03_kubernetes_cluster_status.png` | **Task 7**: AKS Cloud Deployment | Terminal output showing all 6 pods in `1/1 Running` state, the LoadBalancer External IP `4.224.167.2`, and HPA status. | `kubectl get pods,svc,hpa -o wide` |
-| **4** | `04_mlflow_tracking_runs.png` | **Task 3**: Experiment Tracking | MLflow UI showing experiment `heart_disease_classification`, runs for `logistic_regression` and `random_forest`, metrics, and author `Zeel`. | `http://4.224.167.2:5000/#/experiments/1` |
-| **5** | `05_grafana_monitoring_dashboard.png` | **Task 8**: Monitoring & Logging | Grafana dashboard with 6 panels: Total Predictions, Average Confidence gauge, Class breakdown donut, Request Rate, Latency P95, Status Codes. | `http://4.224.167.2:3000/d/heart-disease-mlops` |
-
----
 
 ## 14. Code Repository & Submission Information
 
