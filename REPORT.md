@@ -26,7 +26,7 @@ This report documents the design, development, containerization, cloud deploymen
 
 The system follows modern cloud-native MLOps architecture patterns, separating offline experimentation, continuous integration, container delivery, and online serving.
 
-![architecture diagram](docs/screenshots/architecture-diagram.png)
+![architecture diagram](screenshots/architecture-diagram.png)
 
 ---
 
@@ -145,8 +145,8 @@ All modeling iterations, parameters, evaluation metrics, and diagnostic figures 
 
 ### 5.2 MLflow Experiment Tracking UI & Runs Screenshot
 
-![MLflow Tracking Server](docs/screenshots/mlflow_tracking.png)
-![MLflow Tracking Server and Runs](docs/screenshots/mlflow_tracking_runs.png)
+![MLflow Tracking Server](screenshots/mlflow_tracking.png)
+![MLflow Tracking Server and Runs](screenshots/mlflow_tracking_runs.png)
 
 
 ---
@@ -186,11 +186,11 @@ Automated via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) with 3 stri
 
 ### 7.3 CI/CD Workflow Execution Screenshot
 
-![GitHub Actions CI Workflow](docs/screenshots/github_actions_ci.png)
+![GitHub Actions CI Workflow](screenshots/github_actions_ci.png)
 
 GitHub Actions workflow run overview showing all 3 jobs (`lint`, `test` with 55 passing unit tests, `train`) completing with green checkmarks on push to `main`
 
-![GitHub Actions CI Workflow](docs/screenshots/github_actions_ci_pipeline.png)
+![GitHub Actions CI Workflow](screenshots/github_actions_ci_pipeline.png)
 ---
 
 ## 8. Task 6: Model Containerization
@@ -219,9 +219,9 @@ The test suite validates 5 distinct clinical scenarios against the running API:
 
 Interactive OpenAPI Swagger documentation page showing available routes (`/predict`, `/health`, `/metrics`) and input payload schemas.
 
-> - **Source URL**: `http://4.224.167.2/docs`  
+**Source URL**: `http://4.224.167.2/docs`  
 
-![FastAPI Interactive Swagger UI](docs/screenshots/fastapi_swagger_docs.png)
+![FastAPI Interactive Swagger UI](screenshots/fastapi_swagger_docs.png)
 
 ---
 
@@ -234,14 +234,26 @@ Deployed to **Azure Kubernetes Service (AKS)** in region `centralindia`:
 - **Container Registry**: Azure Container Registry `acrheart0a9382.azurecr.io` (Basic SKU).
 - **Quota Compliance**: Azure for Students subscriptions enforce a strict quota limit of **3 Public IP addresses per region**. We designed a unified NGINX Gateway LoadBalancer that multiplexes all three services through **1 single Public IP** (`4.224.167.2`), fully compliant with student quotas.
 
-Resources created on Azure to host the application
-![azure resources](docs/screenshots/azure_resources.png)
+**Kubernetes Cluster Status**
 
-IP address of the application
-![azure ip address](docs/screenshots/azure_ip_address.png)
+![Kubernetes Cluster Status](screenshots/azure_k8s_cluster.png)
 
-Load balancer
-![azure load balancer](docs/screenshots/azure_load_balancer.png)
+**Resources created on Azure to host the application**
+
+![azure resources](screenshots/azure_resources.png)
+
+**IP address of the application**
+
+![azure ip address](screenshots/azure_ip_address.png)
+
+**Load balancer**
+
+![azure load balancer](screenshots/azure_load_balancer.png)
+
+**Endpoint verification**
+Using postman to hit the `/predict` endpoint on the Azure and check the response
+
+![azure endpoint verification](screenshots/azure-endpoint-verification.png)
 
 ### 9.2 Kubernetes Manifests
 Stored under [`k8s/`](k8s/):
@@ -254,6 +266,11 @@ Stored under [`k8s/`](k8s/):
 - **`k8s/monitoring-prometheus.yaml`**: Deploys Prometheus with automated scraping of the API service every 5 seconds.
 - **`k8s/monitoring-grafana.yaml`**: Deploys Grafana with auto-provisioned Prometheus datasource and MLOps dashboard definitions.
 - **`k8s/mlflow.yaml`**: Deploys the MLflow tracking server on AKS.
+
+**Azure Kubernetes Deployments**
+
+![azure kubernetes deployments](screenshots/azure-deployments.png)
+
 
 ### 9.3 Live Cluster Status
 ```text
@@ -271,10 +288,6 @@ service/mlops-gateway-service   LoadBalancer   10.0.67.172    4.224.167.2   80:3
 NAME                                 REFERENCE                      TARGETS       MINPODS   MAXPODS   REPLICAS
 horizontalpodautoscaler/api-hpa      Deployment/heart-disease-api   cpu: 7%/70%   2         5         2
 ```
-
-### 9.4 Azure AKS Deployment & Cluster Status Screenshot
-
-![Kubernetes Cluster Status](docs/screenshots/azure_k8s_cluster.png)
 
 ---
 
@@ -319,7 +332,7 @@ Live Grafana MLOps dashboard showing real-time metrics: Total Predictions Served
 
 **Source URL**: `http://4.224.167.2:3000/d/mlops-heart-disease-monitor`  
 
-![Grafana Production Monitoring Dashboard](docs/screenshots/grafana_monitoring_dashboard.png)
+![Grafana Production Monitoring Dashboard](screenshots/grafana_monitoring_dashboard.png)
 
 ---
 
