@@ -17,9 +17,11 @@ A scalable, reproducible, containerized, and monitored machine learning solution
    - [Task 6: Model Containerization & API Serving](#task-6-model-containerization--api-serving)
    - [Task 7: Production Deployment (Kubernetes on AKS / Docker Desktop)](#task-7-production-deployment)
    - [Task 8: Monitoring & Logging (Prometheus + Grafana)](#task-8-monitoring--logging)
-5. [API Documentation](#api-documentation)
-6. [One-Line Pipeline Execution](#one-line-pipeline-execution)
-7. [Makefile Shortcuts](#makefile-shortcuts)
+   - [Task 9: Documentation & Reporting](#task-9-documentation--reporting)
+5. [Comprehensive Project Report (REPORT.md)](REPORT.md)
+6. [API Documentation](#api-documentation)
+7. [One-Line Pipeline Execution](#one-line-pipeline-execution)
+8. [Makefile Shortcuts](#makefile-shortcuts)
 
 ---
 
@@ -257,6 +259,18 @@ The application includes production-grade observability:
    ```bash
    make monitoring-down
    ```
+
+---
+
+### Task 9: Documentation & Reporting
+
+The comprehensive project report is documented in **[`REPORT.md`](REPORT.md)** and includes:
+- **Setup & Installation Instructions**: Complete local and Azure reproduction guide.
+- **EDA & Modeling Choices**: Clinical insights, preprocessing decisions, and justification for champion model selection (Logistic Regression, ROC-AUC: 0.9621).
+- **Experiment Tracking Summary**: MLflow hyperparameters, cross-validation metrics, confusion matrices, and ROC curves.
+- **System Architecture Diagram**: End-to-end Mermaid topology from raw data to AKS deployment and observability.
+- **CI/CD & Deployment Workflows**: Details of the 3-stage GitHub Actions pipeline and Azure AKS LoadBalancer deployment.
+- **Repository Links & Live Endpoints**: Clickable links to GitHub, Azure Swagger docs, Grafana dashboard, and MLflow UI.
 
 ---
 
