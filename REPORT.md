@@ -168,7 +168,7 @@ Evaluated using **5-Fold Stratified Cross-Validation** on the training partition
 
 All modeling iterations, parameters, evaluation metrics, and diagnostic figures were logged to an **MLflow Tracking Server**:
 
-### Logged Components per Run
+### 5.1 Logged Components per Run
 - **Parameters**: `C`, `solver`, `penalty`, `max_iter`, `n_estimators`, `random_state`.
 - **Metrics**: Stratified 5-Fold CV mean and standard deviations (`cv_accuracy_mean`, `cv_roc_auc_mean`, etc.) and test set metrics (`test_roc_auc`, `test_f1`, etc.).
 - **Artifacts**:
@@ -177,8 +177,17 @@ All modeling iterations, parameters, evaluation metrics, and diagnostic figures 
   - `importance_random_forest.png` (MDI Feature Importance).
   - `model_comparison.png` (Side-by-side metric bar charts).
   - `report_*.txt` (Full Scikit-Learn classification reports).
-  - Serialized model binaries.
+  - Serialized model binaries (`model/` MLflow format).
 - **Run Metadata**: Explicitly tagged with author `Zeel Patel`, user `Zeel`, and model type.
+
+### 5.2 MLflow Experiment Tracking UI & Runs Screenshot
+
+![MLflow Tracking Server and Runs](docs/screenshots/04_mlflow_tracking_runs.png)
+
+> **[Screenshot Placeholder: `04_mlflow_tracking_runs.png`]**  
+> - **Description**: MLflow UI showing the `heart_disease_classification` experiment, comparative runs for `logistic_regression` and `random_forest`, logged metrics (`cv_roc_auc_mean`, `test_roc_auc`), and author attribution `Zeel`.  
+> - **Source URL**: `http://4.224.167.2:5000/#/experiments/1`  
+> - **Where to save**: `docs/screenshots/04_mlflow_tracking_runs.png`
 
 ---
 
@@ -215,6 +224,15 @@ Automated via [`.github/workflows/ci.yml`](file:///Users/nisarg/Desktop/MLOps-As
 3. **Job 3 (`train`)**: Executes `src/train.py`, logs parameters and evaluation metrics directly to the live cloud MLflow server (`http://4.224.167.2:5000`), and uploads the packaged model artifacts.
 - **Verification**: Latest GitHub Actions Run (`39019775414`) completed with **100% SUCCESS**.
 
+### 7.3 CI/CD Workflow Execution Screenshot
+
+![GitHub Actions CI Workflow](docs/screenshots/01_github_actions_ci.png)
+
+> **[Screenshot Placeholder: `01_github_actions_ci.png`]**  
+> - **Description**: GitHub Actions workflow run overview showing all 3 jobs (`lint`, `test` with 55 passing unit tests, `train`) completing with green checkmarks on push to `main` by `Mr-ZeelPatel`.  
+> - **Source URL**: `https://github.com/Mr-ZeelPatel/MLOps-assignment-1/actions`  
+> - **Where to save**: `docs/screenshots/01_github_actions_ci.png`
+
 ---
 
 ## 8. Task 6: Model Containerization
@@ -238,6 +256,15 @@ The test suite validates 5 distinct clinical scenarios against the running API:
 - Scenario 3: Low-risk patient prediction (`confidence: 0.9894`, label: *No Disease*).
 - Scenario 4: High-risk patient prediction (`confidence: 0.9905`, label: *Disease*).
 - Scenario 5: Average borderline patient prediction (`confidence: 0.8489`).
+
+### 8.4 Live API Swagger Interface Screenshot
+
+![FastAPI Interactive Swagger UI](docs/screenshots/02_fastapi_swagger_docs.png)
+
+> **[Screenshot Placeholder: `02_fastapi_swagger_docs.png`]**  
+> - **Description**: Interactive OpenAPI Swagger documentation page showing available routes (`/predict`, `/health`, `/metrics`) and input payload schemas.  
+> - **Source URL**: `http://4.224.167.2/docs`  
+> - **Where to save**: `docs/screenshots/02_fastapi_swagger_docs.png`
 
 ---
 
@@ -265,19 +292,28 @@ Stored under [`k8s/`](file:///Users/nisarg/Desktop/MLOps-Assignment/k8s/):
 ### 9.3 Live Cluster Status
 ```text
 NAME                                     READY   STATUS    RESTARTS   AGE   IP             NODE
-pod/grafana-57d7f46d8b-74lkv             1/1     Running   0          20h   10.244.0.76    aks-nodepool1-44750060-vmss000000
+pod/grafana-7865d8568f-8fwpp             1/1     Running   0          5m    10.244.0.213   aks-nodepool1-44750060-vmss000000
 pod/heart-disease-api-85c8f8b9c7-cznt9   1/1     Running   0          20h   10.244.0.188   aks-nodepool1-44750060-vmss000000
 pod/heart-disease-api-85c8f8b9c7-vtb74   1/1     Running   0          20h   10.244.0.5     aks-nodepool1-44750060-vmss000000
 pod/mlflow-94f89c5f8-pzdwk               1/1     Running   0          19h   10.244.0.42    aks-nodepool1-44750060-vmss000000
-pod/mlops-gateway-7dd64c7744-2dr2g       1/1     Running   0          19h   10.244.0.218   aks-nodepool1-44750060-vmss000000
+pod/mlops-gateway-7dd64c7744-2dr2g       1/1     Running   0          20h   10.244.0.218   aks-nodepool1-44750060-vmss000000
 pod/prometheus-f8cf8cccf-nnpjt           1/1     Running   0          20h   10.244.0.133   aks-nodepool1-44750060-vmss000000
 
 NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)
-service/mlops-gateway-service   LoadBalancer   10.0.67.172    4.224.167.2   80/TCP, 3000/TCP, 5000/TCP
+service/mlops-gateway-service   LoadBalancer   10.0.67.172    4.224.167.2   80:32665/TCP, 3000:32070/TCP, 5000:31106/TCP
 
 NAME                                 REFERENCE                      TARGETS       MINPODS   MAXPODS   REPLICAS
 horizontalpodautoscaler/api-hpa      Deployment/heart-disease-api   cpu: 7%/70%   2         5         2
 ```
+
+### 9.4 Azure AKS Deployment & Cluster Status Screenshot
+
+![Kubernetes Cluster Status](docs/screenshots/03_kubernetes_cluster_status.png)
+
+> **[Screenshot Placeholder: `03_kubernetes_cluster_status.png`]**  
+> - **Description**: Terminal output showing all 6 Kubernetes pods running, LoadBalancer public IP `4.224.167.2`, and active HPA configuration.  
+> - **Command to run**: `kubectl get pods,svc,hpa -o wide`  
+> - **Where to save**: `docs/screenshots/03_kubernetes_cluster_status.png`
 
 ---
 
@@ -315,6 +351,15 @@ Auto-provisioned via [`k8s/monitoring-grafana.yaml`](file:///Users/nisarg/Deskto
 4. **API Request Rate (req/sec)** (Time Series graph).
 5. **API Response Latency (p50, p95, p99)** (Time Series graph).
 6. **HTTP Status Codes Distribution** (200 OK vs 4xx/5xx errors).
+
+### 10.4 Grafana Observability Dashboard Screenshot
+
+![Grafana Production Monitoring Dashboard](docs/screenshots/05_grafana_monitoring_dashboard.png)
+
+> **[Screenshot Placeholder: `05_grafana_monitoring_dashboard.png`]**  
+> - **Description**: Live Grafana MLOps dashboard showing real-time metrics: Total Predictions Served, Average Model Confidence, Prediction Breakdown (Disease vs Healthy), API Request Rate, Latency P95, and HTTP Status Codes.  
+> - **Source URL**: `http://4.224.167.2:3000/d/heart-disease-mlops`  
+> - **Where to save**: `docs/screenshots/05_grafana_monitoring_dashboard.png`
 
 ---
 
@@ -368,3 +413,30 @@ kubectl get pods,svc,hpa -o wide
 ```bash
 az group delete --name rg-mlops-heart --yes --no-wait
 ```
+
+---
+
+## 13. Required Screenshots & Evidence Submission Catalog
+
+To satisfy all requirements of **Task 9 (Documentation & Reporting)**, the following five screenshots provide visual proof of the operational pipeline across CI/CD, serving, tracking, orchestration, and monitoring. Save your captured images directly into `docs/screenshots/` using the specified filenames:
+
+| # | Filename | Assignment Task | What to Capture | Source URL / Terminal Command |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | `01_github_actions_ci.png` | **Task 5**: CI/CD Automation | GitHub Actions run overview with all 3 jobs green: `lint` (flake8), `test` (55 tests passing), and `train`. | `https://github.com/Mr-ZeelPatel/MLOps-assignment-1/actions` |
+| **2** | `02_fastapi_swagger_docs.png` | **Task 6 & 7**: API Serving | Interactive OpenAPI Swagger UI showing `/predict`, `/health`, `/metrics` routes and the `PatientInput` schema. | `http://4.224.167.2/docs` |
+| **3** | `03_kubernetes_cluster_status.png` | **Task 7**: AKS Cloud Deployment | Terminal output showing all 6 pods in `1/1 Running` state, the LoadBalancer External IP `4.224.167.2`, and HPA status. | `kubectl get pods,svc,hpa -o wide` |
+| **4** | `04_mlflow_tracking_runs.png` | **Task 3**: Experiment Tracking | MLflow UI showing experiment `heart_disease_classification`, runs for `logistic_regression` and `random_forest`, metrics, and author `Zeel`. | `http://4.224.167.2:5000/#/experiments/1` |
+| **5** | `05_grafana_monitoring_dashboard.png` | **Task 8**: Monitoring & Logging | Grafana dashboard with 6 panels: Total Predictions, Average Confidence gauge, Class breakdown donut, Request Rate, Latency P95, Status Codes. | `http://4.224.167.2:3000/d/heart-disease-mlops` |
+
+---
+
+## 14. Code Repository & Submission Information
+
+- **Code Repository**: [https://github.com/Mr-ZeelPatel/MLOps-assignment-1](https://github.com/Mr-ZeelPatel/MLOps-assignment-1)
+- **Author**: Zeel Patel
+- **Email**: zeeldpatel999@gmail.com
+- **Public Cloud Gateway IP**: `http://4.224.167.2` (Azure AKS, Central India)
+- **FastAPI Documentation**: `http://4.224.167.2/docs`
+- **MLflow Tracking UI**: `http://4.224.167.2:5000`
+- **Grafana Observability Dashboard**: `http://4.224.167.2:3000`
+
