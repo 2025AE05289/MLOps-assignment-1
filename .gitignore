@@ -8,21 +8,8 @@ venv/
 .venv/
 env/
 
-# MLflow tracking runs & database (runtime generated)
-output/mlruns/
-mlruns/
-*.db
-
 # Test coverage & Pytest cache
 .pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-output/coverage_report/
-
-# API logs
-logs/
-*.log
 
 # OS generated files
 .DS_Store
@@ -30,10 +17,7 @@ logs/
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
 
 # Assignment prompts and instructions
 MLOps Assignment 1 Instructions.pdf
-assignment.txt
 

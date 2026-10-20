@@ -1,0 +1,7 @@
+2026-10-17 11:52:34,266 [INFO] heart_disease_api: testclient - 'GET /metrics' 200 - Latency: 0.46ms
+2026-10-17 11:52:34,267 [INFO] httpx: HTTP Request: GET http://testserver/metrics "HTTP/1.1 200 OK"
+2026-10-17 11:52:34,297 [INFO] heart_disease_api: [PREDICTION] Result: No Disease (pred=0) | Confidence: 0.8489 | Inference: 28.61ms | Age: 54.0, Sex: 1.0, CP: 3.0
+2026-10-17 11:52:34,298 [INFO] heart_disease_api: testclient - 'POST /predict' 200 - Latency: 30.63ms
+2026-10-17 11:52:34,298 [INFO] httpx: HTTP Request: POST http://testserver/predict "HTTP/1.1 200 OK"
+2026-10-17 11:52:34,299 [INFO] heart_disease_api: testclient - 'GET /metrics' 200 - Latency: 0.48ms
+2026-10-17 11:52:34,300 [INFO] httpx: HTTP Request: GET http://testserver/metrics "HTTP/1.1 200 OK"
