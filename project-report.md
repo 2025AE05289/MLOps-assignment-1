@@ -1,9 +1,9 @@
 # Project Report: End-to-End MLOps Solution for Heart Disease Classification
 
-**Author**: Zeel Patel  
-**Email**: zeeldpatel999@gmail.com  
+**Author**: Zeel Patel (ID: 2025AE05289)  
+**Email**: 2025ae05289@wilp.bits-pilani.ac.in / zeeldpatel999@gmail.com  
 **Course / Context**: MLOps Assignment 1  
-**Repository**: [https://github.com/Mr-ZeelPatel/MLOps-assignment-1](https://github.com/Mr-ZeelPatel/MLOps-assignment-1)  
+**Repository**: [https://github.com/2025AE05289/MLOps-assignment-1](https://github.com/2025AE05289/MLOps-assignment-1)  
 **Date**: October 2026  
 
 ---
@@ -148,6 +148,7 @@ All modeling iterations, parameters, evaluation metrics, and diagnostic figures 
 
 ![MLflow Tracking Server](screenshots/mlflow_tracking.png)
 ![MLflow Tracking Server and Runs](screenshots/mlflow_tracking_runs.png)
+![MLflow Model Registry - Champion Model with Schema](screenshots/mlflow-champion-model.png)
 
 
 ---
@@ -343,7 +344,7 @@ Live Grafana MLOps dashboard showing real-time metrics: Total Predictions Served
 ### 12.1 Local Execution
 ```bash
 # 1. Clone repository
-git clone https://github.com/Mr-ZeelPatel/MLOps-assignment-1.git
+git clone https://github.com/2025AE05289/MLOps-assignment-1.git
 cd MLOps-assignment-1
 
 # 2. Setup virtual environment & dependencies
@@ -374,9 +375,11 @@ kubectl get pods,svc,hpa -o wide
 
 ## 14. Code Repository & Submission Information
 
-- **Code Repository**: [https://github.com/Mr-ZeelPatel/MLOps-assignment-1](https://github.com/Mr-ZeelPatel/MLOps-assignment-1)
-- **Author**: Zeel Patel
-- **Email**: zeeldpatel999@gmail.com
+- **Code Repository**: [https://github.com/2025AE05289/MLOps-assignment-1](https://github.com/2025AE05289/MLOps-assignment-1)
+- **Author**: Zeel Patel (BITS Pilani ID: `2025AE05289`)
+- **Student Email**: `2025ae05289@wilp.bits-pilani.ac.in`
+- **Personal Email**: `zeeldpatel999@gmail.com`
+- **GitHub Username**: `2025AE05289`
 - **Public Cloud Gateway IP**: `http://4.224.167.2` (Azure AKS, Central India)
 - **FastAPI Documentation**: `http://4.224.167.2/docs`
 - **MLflow Tracking UI**: `http://4.224.167.2:5000`

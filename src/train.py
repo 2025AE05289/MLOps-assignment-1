@@ -46,8 +46,10 @@ from sklearn.metrics import (
     roc_curve,
 )
 
+import pandas as pd
 import mlflow
 import mlflow.sklearn
+from mlflow.models.signature import infer_signature
 
 warnings.filterwarnings("ignore")
 
@@ -289,6 +291,11 @@ def train_and_log_model(model, model_name, X_train, X_test, y_train, y_test,
         roc_path = plot_roc_curve(y_test, y_prob, model_name)
         imp_path = plot_feature_importance(model, feature_names, model_name)
 
+        # Infer signature and input example for MLflow Schema display
+        sample_df = pd.DataFrame(X_test[:5], columns=feature_names) if feature_names else pd.DataFrame(X_test[:5])
+        sample_preds = model.predict(X_test[:5])
+        signature = infer_signature(sample_df, sample_preds)
+
         # Log artifacts with MLflow (graceful for remote/CI environments)
         try:
             mlflow.log_artifact(report_path)
@@ -297,8 +304,10 @@ def train_and_log_model(model, model_name, X_train, X_test, y_train, y_test,
             if imp_path:
                 mlflow.log_artifact(imp_path)
             mlflow.sklearn.log_model(
-                model, artifact_path="model",
-                serialization_format="pickle",
+                sk_model=model,
+                artifact_path="model",
+                signature=signature,
+                input_example=sample_df.iloc[:2],
             )
         except Exception as e:
             print(f"  [INFO] Remote artifact upload notice: {e}")
@@ -501,12 +510,19 @@ def main():
         for metric, vals in best_result["cv_results"].items():
             mlflow.log_metric(f"champion_cv_{metric}_mean", vals["mean"])
 
+        # Infer signature and input example for Champion Model Schema
+        sample_df = pd.DataFrame(X_test[:5], columns=feature_names) if feature_names else pd.DataFrame(X_test[:5])
+        sample_preds = best_result["model"].predict(X_test[:5])
+        signature = infer_signature(sample_df, sample_preds)
+
         try:
             # Register in MLflow Model Registry
             mlflow.sklearn.log_model(
                 sk_model=best_result["model"],
                 artifact_path="model",
                 registered_model_name="heart-disease-champion",
+                signature=signature,
+                input_example=sample_df.iloc[:2],
             )
             mlflow.log_artifact(model_path)
             mlflow.log_artifact(pipeline_path)
