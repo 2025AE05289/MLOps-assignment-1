@@ -10,6 +10,9 @@
 
 A production-grade, cloud-native Machine Learning Operations (MLOps) pipeline for **Heart Disease Classification** using the **UCI Heart Disease Dataset**. The system automates data acquisition, feature engineering, experiment tracking, continuous integration, containerization, Kubernetes orchestration, and full-stack observability.
 
+- **Report**: `final-report.docx`
+- **Pipeline video**: `assignment-1-video.mov` [SharePoint Link](https://wilpbitspilaniacin0-my.sharepoint.com/:v:/g/personal/2025ae05289_wilp_bits-pilani_ac_in/IQDoIDcTvP0FTLb2miWBy7UJAT2KxHHxumLS0O74dJVux1E?e=8FcvOc)
+
 ---
 
 ## 📑 Table of Contents
