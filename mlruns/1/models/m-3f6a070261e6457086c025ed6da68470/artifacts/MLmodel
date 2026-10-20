@@ -1,0 +1,49 @@
+artifact_path: /Users/nisarg/Desktop/MLOps-Assignment/mlruns/1/models/m-3f6a070261e6457086c025ed6da68470/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.skops
+    predict_fn: predict
+    python_version: 3.14.2
+  sklearn:
+    code: null
+    pickled_model: model.skops
+    serialization_format: skops
+    sklearn_version: 1.9.1
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.17.1
+model_id: m-3f6a070261e6457086c025ed6da68470
+model_size_bytes: 10943
+model_uuid: m-3f6a070261e6457086c025ed6da68470
+prompts: null
+run_id: 232471d9664d4af5b580f783e3477626
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "double", "name": "num__age", "required": true}, {"type": "double",
+    "name": "num__trestbps", "required": true}, {"type": "double", "name": "num__chol",
+    "required": true}, {"type": "double", "name": "num__thalach", "required": true},
+    {"type": "double", "name": "num__oldpeak", "required": true}, {"type": "double",
+    "name": "cat__sex_1.0", "required": true}, {"type": "double", "name": "cat__cp_2.0",
+    "required": true}, {"type": "double", "name": "cat__cp_3.0", "required": true},
+    {"type": "double", "name": "cat__cp_4.0", "required": true}, {"type": "double",
+    "name": "cat__fbs_1.0", "required": true}, {"type": "double", "name": "cat__restecg_1.0",
+    "required": true}, {"type": "double", "name": "cat__restecg_2.0", "required":
+    true}, {"type": "double", "name": "cat__exang_1.0", "required": true}, {"type":
+    "double", "name": "cat__slope_2.0", "required": true}, {"type": "double", "name":
+    "cat__slope_3.0", "required": true}, {"type": "double", "name": "cat__ca_1.0",
+    "required": true}, {"type": "double", "name": "cat__ca_2.0", "required": true},
+    {"type": "double", "name": "cat__ca_3.0", "required": true}, {"type": "double",
+    "name": "cat__thal_6.0", "required": true}, {"type": "double", "name": "cat__thal_7.0",
+    "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-10-20 04:59:32.040915'

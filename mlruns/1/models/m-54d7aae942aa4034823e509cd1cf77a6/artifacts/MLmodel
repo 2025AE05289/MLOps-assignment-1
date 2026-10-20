@@ -1,0 +1,23 @@
+artifact_path: /Users/nisarg/Desktop/MLOps-Assignment/mlruns/1/models/m-54d7aae942aa4034823e509cd1cf77a6/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.14.2
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: pickle
+    sklearn_version: 1.9.1
+    skops_trusted_types: null
+mlflow_version: 3.17.1
+model_id: m-54d7aae942aa4034823e509cd1cf77a6
+model_size_bytes: 1057464
+model_uuid: m-54d7aae942aa4034823e509cd1cf77a6
+prompts: null
+run_id: 3037da27f5e24cdba3e0d94856c40acb
+utc_time_created: '2026-10-20 04:26:13.200907'
