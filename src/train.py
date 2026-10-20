@@ -408,18 +408,35 @@ def main():
     os.makedirs(MLRUNS_DIR, exist_ok=True)
     mlflow_db_path = os.path.join(MLRUNS_DIR, "mlflow.db")
 
-    # Safeguard: if an existing DB references paths from a different machine, reset it
-    if os.path.exists(mlflow_db_path):
-        try:
-            temp_client = mlflow.tracking.MlflowClient(f"sqlite:///{mlflow_db_path}")
-            exp = temp_client.get_experiment_by_name("heart_disease_classification")
-            if exp and not exp.artifact_location.startswith(PROJECT_ROOT) and not os.path.exists(exp.artifact_location):
-                print(f"[WARN] Stale artifact location detected ({exp.artifact_location}). Resetting database...")
-                os.remove(mlflow_db_path)
-        except Exception:
-            pass
-
     tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", f"sqlite:///{mlflow_db_path}")
+
+    # If using local SQLite, ensure artifacts directory exists and update any stale cross-machine paths
+    if tracking_uri.startswith("sqlite"):
+        artifacts_dir = os.path.join(MLRUNS_DIR, "artifacts")
+        os.makedirs(artifacts_dir, exist_ok=True)
+        if os.path.exists(mlflow_db_path):
+            try:
+                import sqlite3
+                conn = sqlite3.connect(mlflow_db_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='experiments'")
+                table_exists = cursor.fetchone()[0] > 0
+                if table_exists:
+                    cursor.execute(
+                        "UPDATE experiments SET artifact_location = ? WHERE name = 'heart_disease_classification'",
+                        (artifacts_dir,)
+                    )
+                    conn.commit()
+                conn.close()
+                if not table_exists:
+                    os.remove(mlflow_db_path)
+            except Exception as e:
+                print(f"[WARN] SQLite database check note: {e}")
+                try:
+                    os.remove(mlflow_db_path)
+                except Exception:
+                    pass
+
     mlflow.set_tracking_uri(tracking_uri)
 
     try:
