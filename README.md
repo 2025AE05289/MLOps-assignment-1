@@ -1,13 +1,5 @@
 # Heart Disease Classification — End-to-End MLOps Solution
 
-[![CI/CD Pipeline](https://github.com/2025AE05289/MLOps-assignment-1/actions/workflows/ci.yml/badge.svg)](https://github.com/2025AE05289/MLOps-assignment-1/actions/workflows/ci.yml)
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg)](https://fastapi.tiangolo.com/)
-[![MLflow](https://img.shields.io/badge/MLflow-Tracking%20%26%20Registry-0194E2.svg)](https://mlflow.org/)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-AKS-326CE5.svg)](https://azure.microsoft.com/en-us/products/kubernetes-service/)
-[![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C.svg)](https://prometheus.io/)
-[![Grafana](https://img.shields.io/badge/Grafana-Dashboard-F46800.svg)](https://grafana.com/)
-
 A production-grade, cloud-native Machine Learning Operations (MLOps) pipeline for **Heart Disease Classification** using the **UCI Heart Disease Dataset**. The system automates data acquisition, feature engineering, experiment tracking, continuous integration, containerization, Kubernetes orchestration, and full-stack observability.
 
 - **Report**: `final-report.docx`
@@ -15,7 +7,7 @@ A production-grade, cloud-native Machine Learning Operations (MLOps) pipeline fo
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [System Architecture](#-system-architecture)
 - [Live Cloud Services](#-live-cloud-services-azure-aks)
@@ -29,7 +21,7 @@ A production-grade, cloud-native Machine Learning Operations (MLOps) pipeline fo
 
 ---
 
-## 🏛 System Architecture
+## System Architecture
 
 The solution follows modern cloud-native MLOps architecture patterns, decoupling offline experimentation from online serving and continuous delivery:
 
@@ -54,7 +46,7 @@ The solution follows modern cloud-native MLOps architecture patterns, decoupling
 
 ---
 
-## 🌐 Live Cloud Services (Azure AKS)
+## Live Cloud Services (Azure AKS)
 
 All services are deployed to **Azure Kubernetes Service (AKS)** in the `centralindia` region under a single LoadBalancer Public IP (`4.224.167.2`):
 
@@ -69,7 +61,7 @@ All services are deployed to **Azure Kubernetes Service (AKS)** in the `centrali
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 ├── .github/workflows/       # GitHub Actions CI/CD workflows
@@ -113,7 +105,7 @@ All services are deployed to **Azure Kubernetes Service (AKS)** in the `centrali
 
 ---
 
-## 🤖 Machine Learning Lifecycle
+## Machine Learning Lifecycle
 
 ### 1. Data Cleaning & Feature Engineering
 - **Missing Values**: Handled discrete feature missingness via mode imputation (`ca=0.0`, `thal=3.0`).
@@ -135,7 +127,7 @@ Evaluated using **5-Fold Stratified Cross-Validation** and a held-out test split
 
 ---
 
-## 🔄 CI/CD Pipeline
+## CI/CD Pipeline
 
 The GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) executes automatically on every push to `main`:
 
@@ -145,7 +137,7 @@ The GitHub Actions workflow ([`.github/workflows/ci.yml`](.github/workflows/ci.y
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### Local Setup
 
@@ -182,7 +174,7 @@ make monitoring
 
 ---
 
-## 📡 API Usage & Endpoints
+## API Usage & Endpoints
 
 ### Single Patient Prediction (`POST /predict`)
 
@@ -222,7 +214,7 @@ curl -X POST "http://4.224.167.2/predict" \
 
 ---
 
-## 📊 Monitoring & Observability
+## Monitoring & Observability
 
 - **Structured Request Logs**: Every inference request logs timestamp, client IP, latency, prediction, and confidence to [`logs/api.log`](logs/api.log).
 - **Prometheus Metrics (`/metrics`)**: Exposes request rates, response times, model confidence distributions, and prediction counts by class.
@@ -230,7 +222,7 @@ curl -X POST "http://4.224.167.2/predict" \
 
 ---
 
-## 👨‍💻 Author & Academic Context
+## Author & Academic Context
 
 - **Author**: Patel Zeel Dharmendrakumar
 - **BITS ID**: `2025AE05289`
