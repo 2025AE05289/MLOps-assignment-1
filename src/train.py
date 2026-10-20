@@ -482,8 +482,8 @@ def main():
     )
     
     # ── Log Champion Model & Register in MLflow Model Registry ──
-    run_name = f"Champion Model — {best_name}"
-    print(f"\n[STEP 7] Logging and registering {run_name} in MLflow Model Registry...")
+    run_name = "Champion Model"
+    print(f"\n[STEP 7] Promoting and registering '{best_name}' as '{run_name}' in MLflow Model Registry...")
     with mlflow.start_run(run_name=run_name):
         mlflow.set_tag("mlflow.user", "Zeel")
         mlflow.set_tag("user_id", "Zeel")
