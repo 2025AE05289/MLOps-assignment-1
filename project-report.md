@@ -76,8 +76,9 @@ Implemented in [`src/data_preprocessing.py`](src/data_preprocessing.py):
    - Given the small percentage (<2%) and discrete categorical nature, both features were imputed using their statistical mode (`ca_mode = 0.0`, `thal_mode = 3.0`) avoiding data loss from deletion.
 3. **Target Binarization**:
    - Original dataset targets range from `0` (absence) to `1, 2, 3, 4` (various stages of heart disease).
-   - Following clinical standards and assignment requirements, the target was binarized:
-     $$\text{Target} = \begin{cases} 0 & \text{if } num = 0 \text{ (No Disease, } 164 \text{ samples, } 54.1\% \text{)} \\ 1 & \text{if } num > 0 \text{ (Disease Present, } 139 \text{ samples, } 45.9\% \text{)} \end{cases}$$
+   - Following clinical standards and assignment requirements, the target was binarized into two clear classes:
+     - **Class 0 (No Disease)**: when `num == 0` (164 samples, 54.1%)
+     - **Class 1 (Disease Present)**: when `num > 0` (139 samples, 45.9%)
    - **Class Balance**: The dataset is balanced (54.1% vs 45.9%), eliminating the need for synthetic oversampling (e.g., SMOTE) while motivating the use of stratified sampling for train-test splitting and cross-validation.
 
 ### 3.3 EDA Visualizations & Clinical Insights
@@ -260,9 +261,9 @@ Stored under [`k8s/`](k8s/):
 - **`k8s/deployment.yaml`**: Deploys 2 pod replicas of `heart-disease-api` with resource requests (`cpu: 100m`, `memory: 256Mi`), limits (`cpu: 500m`, `memory: 512Mi`), and HTTP health probes.
 - **`k8s/hpa.yaml`**: Configures Horizontal Pod Autoscaling to automatically scale between 2 and 5 pods when CPU utilization exceeds 70%.
 - **`k8s/gateway.yaml`**: Deploys an NGINX reverse-proxy LoadBalancer routing:
-  - Port `80` $\rightarrow$ `heart-disease-api-service:80`
-  - Port `3000` $\rightarrow$ `grafana-service:3000`
-  - Port `5000` $\rightarrow$ `mlflow-service:5000`
+  - Port `80` → `heart-disease-api-service:80`
+  - Port `3000` → `grafana-service:3000`
+  - Port `5000` → `mlflow-service:5000`
 - **`k8s/monitoring-prometheus.yaml`**: Deploys Prometheus with automated scraping of the API service every 5 seconds.
 - **`k8s/monitoring-grafana.yaml`**: Deploys Grafana with auto-provisioned Prometheus datasource and MLOps dashboard definitions.
 - **`k8s/mlflow.yaml`**: Deploys the MLflow tracking server on AKS.

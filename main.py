@@ -1,17 +1,17 @@
 """
 Heart Disease Prediction — End-to-End MLOps Pipeline Orchestrator.
 
-One-line entry point to execute the complete workflow:
-1. Data Acquisition (download dataset)
-2. Exploratory Data Analysis (generate visualizations)
+Complete, uninterrupted workflow execution:
+1. Data Acquisition (download dataset & preprocess)
+2. Exploratory Data Analysis (generate all visualizations)
 3. Feature Engineering & Model Training (MLflow tracking + model packaging)
-4. Automated Testing (pytest unit test suite)
+4. Code Quality & Linting (flake8 PEP8 verification)
+5. Automated Testing (full pytest unit test suite & coverage)
 
 Usage:
-    python main.py                  # Run full pipeline
-    python main.py --skip-eda       # Skip EDA plot generation
-    python main.py --skip-tests     # Skip running pytest
-    python main.py --serve          # Start API server after pipeline completion
+    python main.py                  # Run complete pipeline
+    python main.py --serve          # Run complete pipeline then start FastAPI server
+    python main.py --mlflow         # Run complete pipeline then start MLflow UI
 """
 
 import sys
@@ -41,18 +41,16 @@ def run_command(cmd, stage_name):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="End-to-End MLOps Pipeline Orchestrator",
+        description="End-to-End MLOps Pipeline Orchestrator (Full Execution)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--skip-eda", action="store_true", help="Skip EDA visualization generation")
-    parser.add_argument("--skip-tests", action="store_true", help="Skip running pytest unit tests")
     parser.add_argument("--serve", action="store_true", help="Launch FastAPI server after pipeline finishes")
     parser.add_argument("--mlflow", action="store_true", help="Launch MLflow UI dashboard after pipeline finishes")
     args = parser.parse_args()
 
     pipeline_start = time.time()
     print("\n" + "█" * 65)
-    print("  STARTING END-TO-END MLOps PIPELINE")
+    print("  STARTING END-TO-END MLOps PIPELINE (FULL EXECUTION)")
     print("█" * 65)
 
     step = 1
@@ -62,29 +60,35 @@ def main():
     run_command([sys.executable, "data/download_data.py"], "Data Download")
     step += 1
 
-    # Stage 2: Exploratory Data Analysis (optional)
-    if not args.skip_eda:
-        print_banner(step, "Exploratory Data Analysis (Visualizations)")
-        run_command([sys.executable, "src/eda.py"], "EDA Generation")
-        step += 1
-    else:
-        print("[INFO] Skipping EDA generation (--skip-eda)")
+    # Stage 2: Exploratory Data Analysis
+    print_banner(step, "Exploratory Data Analysis (Generate Visualizations)")
+    run_command([sys.executable, "src/eda.py"], "EDA Generation")
+    step += 1
 
     # Stage 3: Feature Engineering, Model Training & Packaging
     print_banner(step, "Feature Engineering, Model Training & MLflow Tracking")
     run_command([sys.executable, "src/train.py"], "Model Training & Packaging")
     step += 1
 
-    # Stage 4: Automated Testing (optional)
-    if not args.skip_tests:
-        print_banner(step, "Automated Testing (Pytest Suite & Coverage)")
-        run_command(
-            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "--cov=src", "--cov-report=term-missing"],
-            "Unit Tests",
-        )
-        step += 1
-    else:
-        print("[INFO] Skipping unit tests (--skip-tests)")
+    # Stage 4: Code Quality & Linting
+    print_banner(step, "Code Quality & Linting (flake8)")
+    run_command(
+        [
+            sys.executable, "-m", "flake8", "src/", "app.py", "tests/",
+            "--max-line-length=120", "--statistics", "--count",
+            "--ignore=E501,W503,E203,W293,E402",
+        ],
+        "Code Linting",
+    )
+    step += 1
+
+    # Stage 5: Automated Testing
+    print_banner(step, "Automated Testing (Pytest Suite & Coverage)")
+    run_command(
+        [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "--cov=src", "--cov-report=term-missing"],
+        "Unit Tests",
+    )
+    step += 1
 
     total_time = time.time() - pipeline_start
     print("█" * 65)

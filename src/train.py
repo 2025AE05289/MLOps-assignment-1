@@ -481,25 +481,44 @@ def main():
         best_result["model"], preprocessor, best_name
     )
     
-    # Log best model selection to MLflow
-    with mlflow.start_run(run_name="Best Model Selection"):
+    # ── Log Champion Model & Register in MLflow Model Registry ──
+    run_name = f"Champion Model — {best_name}"
+    print(f"\n[STEP 7] Logging and registering {run_name} in MLflow Model Registry...")
+    with mlflow.start_run(run_name=run_name):
         mlflow.set_tag("mlflow.user", "Zeel")
         mlflow.set_tag("user_id", "Zeel")
         mlflow.set_tag("author", "Zeel Patel")
-        mlflow.log_param("best_model", best_name)
+        mlflow.set_tag("model_status", "Champion")
+        mlflow.set_tag("is_champion", "True")
+        mlflow.set_tag("champion_model_name", best_name)
+        mlflow.log_param("champion_algorithm", best_name)
+        mlflow.log_params(best_result["params"])
+
         for metric, value in best_result["test_metrics"].items():
-            mlflow.log_metric(f"best_{metric}", value)
+            mlflow.log_metric(f"champion_{metric}", value)
+            mlflow.log_metric(f"test_{metric}", value)
+
+        for metric, vals in best_result["cv_results"].items():
+            mlflow.log_metric(f"champion_cv_{metric}_mean", vals["mean"])
+
         try:
+            # Register in MLflow Model Registry
+            mlflow.sklearn.log_model(
+                sk_model=best_result["model"],
+                artifact_path="model",
+                registered_model_name="heart-disease-champion",
+            )
             mlflow.log_artifact(model_path)
             mlflow.log_artifact(pipeline_path)
             mlflow.log_artifact(comparison_path)
-            
+
             # Log requirements.txt for reproducibility
             req_path = os.path.join(PROJECT_ROOT, "requirements.txt")
             if os.path.exists(req_path):
                 mlflow.log_artifact(req_path)
+            print("  [SUCCESS] Champion model registered in MLflow Model Registry as 'heart-disease-champion'")
         except Exception as e:
-            print(f"  [INFO] Remote artifact upload notice: {e}")
+            print(f"  [INFO] Remote artifact/registry notice: {e}")
     
     # ── Summary ──
     print(f"\n{'=' * 60}")
